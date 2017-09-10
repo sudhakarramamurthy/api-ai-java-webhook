@@ -13,6 +13,7 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,7 +30,10 @@ public class WFPController {
 
     @Autowired
     private RestTemplate restTemplate;
-    
+
+    @Value("${wfp.server}")
+    private String wfpServer;
+
     @RequestMapping(path = "/contactsearch", method = RequestMethod.POST)
     public @ResponseBody
     Fulfillment contact(@RequestBody String obj) {
@@ -44,14 +48,14 @@ public class WFPController {
             output.setSpeech(aiWebhookRequest.getResult().getFulfillment().getSpeech());
             return output;
         }
-        ContactSearch contactSearch = restTemplate.getForObject("http://192.168.99.100:8000/api/contacts/brief/"
+        ContactSearch contactSearch = restTemplate.getForObject("{wfpServer}/api/contacts/brief/"
                 + "flat/?page_size=-1&flat=true&search={name}",
-                ContactSearch.class, name);
+                ContactSearch.class, wfpServer, name);
         System.out.println("su.bot.phonebook.HelloWorldController.contact() " + contactSearch.toString());
         System.out.println("su.bot.phonebook.HelloWorldController.contact() " + contactSearch.getCount());
         if (contactSearch.getCount() > 1) {
             responseMessage = getAllNames(contactSearch);
-        }else{
+        } else {
             responseMessage = getContactDetails(contactSearch);
         }
         output.setSpeech(responseMessage);
@@ -61,15 +65,14 @@ public class WFPController {
     private String getAllNames(ContactSearch contactSearch) {
         int count = contactSearch.getCount();
         StringBuffer names = new StringBuffer("Found more than one match, which one you are looking for ?:");
-        for (int i=0;i<count;i++){
+        for (int i = 0; i < count; i++) {
             names.append(":").append(contactSearch.getResults().get(i).getTitle()).
-                append(".").
+                    append(".").
                     append(contactSearch.getResults().get(i).getDisplayName()).append(", Id - ").append(contactSearch.getResults().get(i).getId());
-            if (i+1 != count) {
+            if (i + 1 != count) {
                 names.append(",\n");
             }
-            
-            
+
         }
         return names.toString();
     }
@@ -79,7 +82,7 @@ public class WFPController {
         Result result = contactSearch.getResults().get(0);
         response.append("Yes, found a match!, Is this the one you are looking for : \n").append(result.getTitle()).
                 append(".").append(result.getDisplayName()).append(",\n");
-        response.append("Mobile number :" + result.getMobile()+ ",\n");
+        response.append("Mobile number :" + result.getMobile() + ",\n");
         response.append("Phone number :" + result.getPhone() + ", etxn:" + "\n");
         return response.toString();
     }
