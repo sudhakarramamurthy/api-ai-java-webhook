@@ -10,8 +10,6 @@ import com.google.gson.JsonElement;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -20,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.RestTemplate;
+import wfp.bot.model.rest.response.ContactDetail;
 import wfp.bot.model.rest.response.Result;
 
 @Controller
@@ -44,19 +43,33 @@ public class WFPController {
         String name = parameters.get("EmployeeName").getAsString();
         JsonArray actionParam = parameters.get("action").getAsJsonArray();
         String response = "";
+        Integer empId = -1;
         if (actionParam.size() == 0 || "".equals(name)) {
             output.setSpeech(aiWebhookRequest.getResult().getFulfillment().getSpeech());
             return output;
-        }
-        ContactSearch contactSearch = restTemplate.getForObject("{wfpServer}/api/contacts/brief/"
-                + "flat/?page_size=-1&flat=true&search={name}",
-                ContactSearch.class, wfpServer, name);
-        System.out.println("su.bot.phonebook.HelloWorldController.contact() " + contactSearch.toString());
-        System.out.println("su.bot.phonebook.HelloWorldController.contact() " + contactSearch.getCount());
-        if (contactSearch.getCount() > 1) {
-            responseMessage = getAllNames(contactSearch);
         } else {
-            responseMessage = getContactDetails(contactSearch);
+            if (name.chars().allMatch(Character::isDigit)) {
+                empId = Integer.parseInt(name);
+            }
+        }
+        ContactSearch contactSearch = null;
+        ContactDetail contactDetail = null;
+        if (empId == -1) {//we have received name and not any ID number
+            contactSearch = restTemplate.getForObject("{wfpServer}/api/contacts/brief/"
+                    + "flat/?page_size=-1&flat=true&search={name}",
+                    ContactSearch.class, wfpServer, name);
+            System.out.println("su.bot.phonebook.HelloWorldController.contact() " + contactSearch.toString());
+            System.out.println("su.bot.phonebook.HelloWorldController.contact() " + contactSearch.getCount());
+            if (contactSearch.getCount() > 1) {
+                responseMessage = getAllNames(contactSearch);
+            } else {
+                responseMessage = getContactDetails(contactSearch);
+            }
+        } else {
+            contactDetail = restTemplate.getForObject("{wfpServer}/api/contacts/{empId}",
+                    ContactDetail.class, wfpServer, empId);
+            System.out.println("su.bot.phonebook.HelloWorldController.contact() " + contactDetail.toString());
+            responseMessage = contactDetail.getPhone();
         }
         output.setSpeech(responseMessage);
         return output;
