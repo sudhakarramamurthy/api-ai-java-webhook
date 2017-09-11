@@ -69,7 +69,8 @@ public class WFPController {
             contactDetail = restTemplate.getForObject("{wfpServer}/api/contacts/{empId}",
                     ContactDetail.class, wfpServer, empId);
             System.out.println("su.bot.phonebook.HelloWorldController.contact() " + contactDetail.toString());
-            responseMessage = contactDetail.getPhone();
+            responseMessage = "Here I find the details of " + contactDetail.getTitle() + "." + 
+                    contactDetail.getDisplayName() + " - Phone " + contactDetail.getPhone() + " , Mobile : " + contactDetail.getMobile();
         }
         output.setSpeech(responseMessage);
         return output;
