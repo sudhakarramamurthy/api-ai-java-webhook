@@ -22,7 +22,7 @@ import wfp.bot.model.rest.response.ContactDetail;
 import wfp.bot.model.rest.response.Result;
 
 @Controller
-@RequestMapping("/webhook")
+@RequestMapping("/api")
 public class WFPController {
 
     private final Gson gson = GsonFactory.getDefaultFactory().getGson();
